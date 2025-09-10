@@ -1,0 +1,100 @@
+import time
+import streamlit as st
+
+# --- APP CONFIG ---
+st.set_page_config(page_title="Mr. Strong Pomodoro", page_icon="💪", layout="centered")
+
+# --- PET NAMES ---
+pet_names = [
+    "Habibi ❤️",
+    "Sayang 💕",
+    "Cintaku 💖",
+    "Meri Jaan 🌹",
+    "Kasihku 💘",
+    "Hayati ✨",
+    "Dunyati 🌍",
+    "My Love 💞",
+]
+
+# --- BIRTHDAY SURPRISE (shown once) ---
+if "birthday_shown" not in st.session_state:
+    st.balloons()
+    st.success("🎂 Happy Birthday, Habibi! 🎉 With love from your Sayang ❤️")
+    st.session_state.birthday_shown = True
+
+# --- TITLE ---
+st.title("⏰ Mr. Strong Pomodoro Timer")
+st.subheader("Made with love for you, " + pet_names[0])
+
+# --- TIMER SETTINGS ---
+st.markdown("### ⏱️ Set Work Duration")
+work_hours = st.number_input("Hours", min_value=0, max_value=5, value=0, key="work_h")
+work_minutes = st.number_input("Minutes", min_value=0, max_value=59, value=25, key="work_m")
+work_seconds = st.number_input("Seconds", min_value=0, max_value=59, value=0, key="work_s")
+
+st.markdown("### 🌸 Set Break Duration")
+break_hours = st.number_input("Hours", min_value=0, max_value=5, value=0, key="break_h")
+break_minutes = st.number_input("Minutes", min_value=0, max_value=59, value=5, key="break_m")
+break_seconds = st.number_input("Seconds", min_value=0, max_value=59, value=0, key="break_s")
+
+# Convert to seconds
+work_time = work_hours * 3600 + work_minutes * 60 + work_seconds
+break_time = break_hours * 3600 + break_minutes * 60 + break_seconds
+
+# --- SESSION STATE ---
+if "is_running" not in st.session_state:
+    st.session_state.is_running = False
+if "time_left" not in st.session_state:
+    st.session_state.time_left = work_time
+if "on_break" not in st.session_state:
+    st.session_state.on_break = False
+if "nickname_index" not in st.session_state:
+    st.session_state.nickname_index = 0
+
+# --- START / RESET BUTTONS ---
+col1, col2 = st.columns(2)
+with col1:
+    if st.button("▶️ Start"):
+        st.session_state.is_running = True
+        if st.session_state.time_left <= 0:
+            st.session_state.time_left = work_time
+with col2:
+    if st.button("⏹ Reset"):
+        st.session_state.is_running = False
+        st.session_state.time_left = work_time
+        st.session_state.on_break = False
+        st.session_state.nickname_index = 0
+
+# --- TIMER DISPLAY ---
+placeholder = st.empty()
+
+if st.session_state.is_running:
+    while st.session_state.time_left > 0 and st.session_state.is_running:
+        hrs, rem = divmod(st.session_state.time_left, 3600)
+        mins, secs = divmod(rem, 60)
+        timer_display = f"{hrs:02}:{mins:02}:{secs:02}"
+        nickname = pet_names[st.session_state.nickname_index % len(pet_names)]
+        placeholder.markdown(
+            f"## ⏰ {timer_display}\n### Focus time, {nickname}! 🚀"
+        )
+        time.sleep(1)
+        st.session_state.time_left -= 1
+        st.experimental_rerun()
+
+    # When time is up
+    if st.session_state.time_left == 0:
+        st.session_state.on_break = not st.session_state.on_break
+        st.session_state.nickname_index += 1
+        nickname = pet_names[st.session_state.nickname_index % len(pet_names)]
+        if st.session_state.on_break:
+            st.balloons()
+            st.success(f"🌸 Break time, {nickname}! Relax and enjoy 💕")
+            st.session_state.time_left = break_time
+        else:
+            st.warning(f"🚀 Back to focus, {nickname}! You got this 💪")
+            st.session_state.time_left = work_time
+        st.experimental_rerun()
+else:
+    hrs, rem = divmod(st.session_state.time_left, 3600)
+    mins, secs = divmod(rem, 60)
+    st.markdown(f"## ⏰ {hrs:02}:{mins:02}:{secs:02}")
